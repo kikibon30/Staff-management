@@ -1,0 +1,237 @@
+// ============================================================================
+// SUPABASE INTEGRATION GUIDE
+// ============================================================================
+
+HOW TO CONNECT YOUR SYSTEM TO SUPABASE:
+
+STEP 1: GET YOUR SUPABASE CREDENTIALS
+=====================================
+1. Go to https://supabase.com and sign in
+2. Go to your project settings
+3. Copy your Supabase URL and Anon Key
+4. Open supabase-config.js
+5. Replace:
+   - YOUR_SUPABASE_URL with your URL
+   - YOUR_SUPABASE_ANON_KEY with your Anon Key
+
+Example:
+const SUPABASE_URL = 'https://yourproject.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...';
+
+
+STEP 2: ADD SUPABASE LIBRARY TO YOUR HTML
+===========================================
+Add this line in the <head> section of your HTML file (before supabase-config.js):
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-config.js"></script>
+
+
+STEP 3: UPDATE YOUR HTML TO USE SUPABASE
+==========================================
+
+Replace your data arrays with Supabase function calls:
+
+OLD (localStorage):
+let staffRecords = [];
+
+NEW (Supabase):
+let staffRecords = [];
+
+// Load staff from Supabase on page load
+async function loadStaffRecords() {
+    staffRecords = await getAllStaff();
+    refreshUI();
+}
+
+// Call this on page load
+window.addEventListener('DOMContentLoaded', loadStaffRecords);
+
+
+STEP 4: UPDATE SAVE FUNCTION
+=============================
+
+OLD CODE (localStorage):
+staffRecords.push({ id: newId, name, type, contact });
+
+NEW CODE (Supabase):
+const newStaff = await addStaff({
+    firstName: name.split(' ')[0],
+    lastName: name.split(' ')[1] || '',
+    position: type,
+    phone: contact
+});
+if (newStaff) {
+    staffRecords.push(newStaff);
+    refreshUI();
+}
+
+
+STEP 5: UPDATE DELETE FUNCTION
+===============================
+
+OLD CODE:
+staffRecords = staffRecords.filter(s => s.id !== id);
+
+NEW CODE:
+const success = await deleteStaff(id);
+if (success) {
+    staffRecords = staffRecords.filter(s => s.id !== id);
+    refreshUI();
+}
+
+
+STEP 6: UPDATE EDIT FUNCTION
+=============================
+
+OLD CODE:
+staffRecords[index] = { ...staffRecords[index], ...staffData };
+
+NEW CODE:
+const updated = await updateStaff(id, {
+    firstName: staffData.name.split(' ')[0],
+    lastName: staffData.name.split(' ')[1] || '',
+    position: staffData.type,
+    phone: staffData.contact
+});
+if (updated) {
+    const index = staffRecords.findIndex(s => s.id === id);
+    staffRecords[index] = updated;
+    refreshUI();
+}
+
+
+EXAMPLE: COMPLETE STAFF SAVE FUNCTION WITH SUPABASE
+=====================================================
+
+document.getElementById('staffForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const id = document.getElementById('staffId').value;
+    const staffData = {
+        name: document.getElementById('staffName').value.trim(),
+        type: document.getElementById('staffType').value,
+        contact: document.getElementById('staffContact').value
+    };
+    
+    if (!staffData.name) return alert('Please enter staff name');
+    
+    try {
+        if (id) {
+            // Update existing
+            const updated = await updateStaff(id, {
+                firstName: staffData.name.split(' ')[0],
+                lastName: staffData.name.split(' ')[1] || '',
+                position: staffData.type,
+                phone: staffData.contact
+            });
+            
+            if (updated) {
+                const index = staffRecords.findIndex(s => s.Staff_ID === parseInt(id));
+                if (index !== -1) staffRecords[index] = updated;
+            }
+        } else {
+            // Add new
+            const newStaff = await addStaff({
+                firstName: staffData.name.split(' ')[0],
+                lastName: staffData.name.split(' ')[1] || '',
+                position: staffData.type,
+                phone: staffData.contact
+            });
+            
+            if (newStaff) {
+                staffRecords.push(newStaff);
+            }
+        }
+        
+        document.getElementById('staffForm').reset();
+        document.getElementById('staffId').value = '';
+        refreshUI();
+        alert('✅ Record saved successfully!');
+    } catch (error) {
+        console.error('Error saving staff:', error);
+        alert('❌ Error saving record: ' + error.message);
+    }
+});
+
+
+AVAILABLE FUNCTIONS IN SUPABASE-CONFIG.JS
+============================================
+
+General Functions:
+- getAllRecords(tableName) - Get all records from a table
+- insertRecord(tableName, record) - Insert a new record
+- updateRecord(tableName, id, updates) - Update a record
+- deleteRecord(tableName, id) - Delete a record
+- getRecords(tableName, columns) - Get specific columns
+- getRecordsByCondition(tableName, column, value) - Filter records
+
+Table-Specific Functions:
+- getAllStaff() - Get all staff
+- addStaff(staffData) - Add new staff
+- updateStaff(staffId, staffData) - Update staff
+- deleteStaff(staffId) - Delete staff
+- getAllDepartments() - Get all departments
+- addDepartment(deptData) - Add new department
+- updateDepartment(deptId, deptData) - Update department
+- deleteDepartment(deptId) - Delete department
+- getAllPatients() - Get all patients
+- addPatient(patientData) - Add new patient
+- updatePatient(patientId, patientData) - Update patient
+- deletePatient(patientId) - Delete patient
+- getAllAssignments() - Get all staff assignments
+- addAssignment(assignmentData) - Add new assignment
+
+
+IMPORTANT: TABLE NAMES
+======================
+Use these exact names (case-sensitive):
+- STAFF
+- PATIENT
+- DEPARTMENT
+- WARD
+- BED
+- IN_PATIENT
+- OUT_PATIENT
+- APPOINTMENT
+- PRESCRIPTION
+- DIAGNOSES
+- TREATMENT
+- PHARMACEUTICAL_SUPPLY
+- SURGICAL_NONSURGICAL_SUPPLY
+- SUPPLIER
+- SHIFT
+- QUALIFICATION
+- WORK_EXPERIENCE
+- STAFF_DEPARTMENT_ASSIGNMENT
+- STAFF_ROLE_HISTORY
+- BED_OCCUPANCY_HISTORY
+- PATIENT_MEDICAL_RECORD
+- PATIENT_MEDICATION
+- PATIENT_VISIT_HISTORY
+- WAITING_LIST
+- WARD_REQUISITION
+- REQUISITION_ITEM
+- TREATMENT_PROVIDER
+- BILL
+- BILL_ITEM
+- PAYMENT
+- SUPPLIES_SUPPLIER
+- NEXT_OF_KIN
+
+
+DEBUGGING
+==========
+Open browser console (F12) to see:
+- Connection test result
+- Any errors with database calls
+- Returned data from queries
+
+
+NEXT STEPS
+===========
+1. Create tables in Supabase using wellmeadows_tables_sql.sql
+2. Copy the SQL and paste into Supabase SQL Editor
+3. Add Supabase library and config file to your HTML
+4. Update your JavaScript functions to use Supabase functions
+5. Test with console open (F12)

@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Patient Records - Wellmeadows Hospital</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f4f8; }
+        
+        .navbar { background: #0f3b5c; padding: 0; box-shadow: 0 2px 10px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 100; }
+        .navbar-content { max-width: 1400px; margin: 0 auto; display: flex; align-items: center; padding: 16px 24px; }
+        .logo { font-size: 1.8rem; font-weight: 700; color: white; margin-right: 40px; }
+        .nav-menu { display: flex; gap: 0; flex: 1; }
+        .nav-item { color: white; padding: 16px 20px; text-decoration: none; border-bottom: 3px solid transparent; transition: 0.3s; font-weight: 500; display: inline-block; }
+        .nav-item:hover { background: rgba(255,255,255,0.1); border-bottom-color: #4db8ff; }
+        .nav-item.active { background: rgba(255,255,255,0.2); border-bottom-color: #4db8ff; }
+        
+        .container { max-width: 1400px; margin: 0 auto; padding: 24px; }
+        h1 { color: #0f3b5c; margin-bottom: 8px; font-size: 2rem; }
+        .sub { color: #5a6e7c; margin-bottom: 24px; }
+        
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+        .card { background: white; border-radius: 16px; border: 1px solid #e2e8f0; overflow: hidden; margin-bottom: 24px; }
+        .card-header { background: #f8fafc; padding: 16px 20px; border-bottom: 1px solid #e2e8f0; font-weight: 700; font-size: 1.1rem; color: #1e4a6e; }
+        .card-body { padding: 20px; }
+        .form-group { margin-bottom: 16px; }
+        label { display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 6px; color: #2c5a7a; }
+        input, select, textarea { width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 10px; font-size: 0.9rem; }
+        input:focus, select:focus, textarea:focus { outline: none; border-color: #2c7da0; background-color: #f0f8ff; }
+        button { background: #2c7da0; color: white; border: none; padding: 10px 20px; border-radius: 30px; font-weight: 600; cursor: pointer; transition: 0.3s; }
+        button:hover { background: #1f5e7e; }
+        .btn-outline { background: white; border: 1px solid #cbd5e1; color: #2c7da0; }
+        
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 10px; text-align: left; border-bottom: 1px solid #e2e8f0; font-size: 0.85rem; }
+        th { background: #f8fafc; font-weight: 600; color: #1e4a6e; }
+        tr:hover { background: #f9f9f9; }
+        
+        .empty-state { text-align: center; padding: 40px; color: #94a3b8; }
+        .action-btn { cursor: pointer; margin: 0 5px; font-size: 0.9rem; }
+        hr { margin: 16px 0; }
+        
+        @media (max-width: 1000px) { .grid-2 { grid-template-columns: 1fr; } }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
+</head>
+<body>
+
+<nav class="navbar">
+    <div class="navbar-content">
+        <div class="logo">🏥 Wellmeadows</div>
+        <div class="nav-menu">
+            <a href="index.html" class="nav-item">📊 Dashboard</a>
+            <a href="staff-management.html" class="nav-item">👥 Staff Mgmt</a>
+            <a href="department-management.html" class="nav-item">🏢 Department Mgmt</a>
+            <a href="patient-records.html" class="nav-item active">🩺 Patients</a>
+            <a href="staff-records.html" class="nav-item">📋 Staff Records</a>
+            <a href="department-records.html" class="nav-item">📁 Dept Records</a>
+        </div>
+    </div>
+</nav>
+
+<div class="container">
+    <h1>🩺 Patient Records</h1>
+    <div class="sub">Add and manage patient information</div>
+    
+    <div class="grid-2">
+        <!-- FORM SECTION -->
+        <div>
+            <div class="card">
+                <div class="card-header">➕ Add/Edit Patient</div>
+                <div class="card-body">
+                    <form id="patientForm">
+                        <input type="hidden" id="patientId">
+                        <div class="form-group">
+                            <label>Patient ID (auto-generated when creating new)</label>
+                            <input type="number" id="patientIdInput" placeholder="Leave blank for new patient" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label>First Name</label>
+                            <input type="text" id="patientFirstName" placeholder="First name" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Last Name</label>
+                            <input type="text" id="patientLastName" placeholder="Last name" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Date of Birth</label>
+                            <input type="date" id="patientDOB" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Gender</label>
+                            <select id="patientGender">
+                                <option value="">-- Select --</option>
+                                <option value="Male">Male</option>
+                                <option value="Female">Female</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Phone</label>
+                            <input type="tel" id="patientPhone" placeholder="+1 (555) 000-0000">
+                        </div>
+                        <div class="form-group">
+                            <label>Address</label>
+                            <textarea id="patientAddress" rows="2" placeholder="Street address, city, zip..."></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Marital Status</label>
+                            <select id="patientMaritalStatus">
+                                <option value="">-- Select --</option>
+                                <option value="Single">Single</option>
+                                <option value="Married">Married</option>
+                                <option value="Divorced">Divorced</option>
+                                <option value="Widowed">Widowed</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Date Registered</label>
+                            <input type="date" id="patientDateRegistered">
+                        </div>
+                        <div style="display: flex; gap: 10px;">
+                            <button type="submit">💾 Save Patient</button>
+                            <button type="button" class="btn-outline" id="clearBtn">Clear</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <!-- TABLE SECTION -->
+        <div>
+            <div class="card">
+                <div class="card-header">📋 Patient List</div>
+                <div class="card-body" style="padding: 0;">
+                    <div style="overflow-x: auto; max-height: 500px;">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Name</th>
+                                    <th>DOB</th>
+                                    <th>Phone</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="patientTable">
+                                <tr><td colspan="5" class="empty-state">No patients yet</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let patients = [];
+let editingPatientId = null;
+
+async function loadPatients() {
+    try {
+        console.log('Loading patients from Supabase...');
+        const data = await getAllPatients();
+        console.log('Raw data from Supabase:', JSON.stringify(data, null, 2));
+        patients = data || [];
+        window.DEBUG_PATIENTS = patients; // Make global for debugging
+        console.log('Total patients:', patients.length);
+        if (patients.length > 0) {
+            console.log('First patient object:', JSON.stringify(patients[0], null, 2));
+            console.log('Patient keys:', Object.keys(patients[0]));
+            console.log('Patient names:', patients.map(p => ({id: p.patient_ID, name: p.patient_name})));
+        }
+        renderTable();
+    } catch (error) {
+        console.error('Error loading patients:', error);
+        alert('❌ Could not load patients from database');
+    }
+}
+
+function renderTable() {
+    const tbody = document.getElementById('patientTable');
+    console.log('Rendering table with', patients.length, 'patients');
+    if (patients.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" class="empty-state">No patients yet</td></tr>';
+        return;
+    }
+    tbody.innerHTML = '';
+    patients.forEach(patient => {
+        const row = tbody.insertRow();
+        const fullName = `${patient.first_name || ''} ${patient.last_name || ''}`.trim();
+        row.insertCell(0).innerText = patient.patient_id || '-';
+        row.insertCell(1).innerText = fullName || '-';
+        row.insertCell(2).innerText = patient.dob || '-';
+        row.insertCell(3).innerText = patient.phone || '-';
+        const actionsCell = row.insertCell(4);
+        
+        const editBtn = document.createElement('span');
+        editBtn.innerHTML = '✏️ Edit';
+        editBtn.className = 'action-btn';
+        editBtn.style.cursor = 'pointer';
+        editBtn.onclick = () => editPatient(patient.patient_id);
+        
+        const delBtn = document.createElement('span');
+        delBtn.innerHTML = '🗑️ Delete';
+        delBtn.className = 'action-btn';
+        delBtn.style.cursor = 'pointer';
+        delBtn.style.color = '#dc2626';
+        delBtn.onclick = () => deletePatientRecord(patient.patient_id);
+        
+        actionsCell.appendChild(editBtn);
+        actionsCell.appendChild(document.createTextNode(' '));
+        actionsCell.appendChild(delBtn);
+    });
+}
+
+function editPatient(id) {
+    const patient = patients.find(p => p.patient_id === id);
+    if (patient) {
+        editingPatientId = patient.patient_id;
+        document.getElementById('patientId').value = patient.patient_id;
+        document.getElementById('patientIdInput').value = patient.patient_id || '';
+        document.getElementById('patientFirstName').value = patient.first_name || '';
+        document.getElementById('patientLastName').value = patient.last_name || '';
+        document.getElementById('patientDOB').value = patient.dob || '';
+        document.getElementById('patientGender').value = patient.sex || '';
+        document.getElementById('patientPhone').value = patient.phone || '';
+        document.getElementById('patientAddress').value = patient.address || '';
+        document.getElementById('patientMaritalStatus').value = patient.marital_status || '';
+        document.getElementById('patientDateRegistered').value = patient.date_registered || '';
+        window.scrollTo(0, 0);
+    }
+}
+
+async function deletePatientRecord(id) {
+    if (confirm('Are you sure you want to delete this patient record?')) {
+        try {
+            await deletePatient(id);
+            patients = patients.filter(p => p.patient_id !== id);
+            renderTable();
+            alert('✅ Patient deleted successfully');
+        } catch (error) {
+            console.error('Error deleting patient:', error);
+            alert('❌ Error deleting patient');
+        }
+    }
+}
+
+document.getElementById('patientForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const firstName = document.getElementById('patientFirstName').value.trim();
+    const lastName = document.getElementById('patientLastName').value.trim();
+    
+    if (!firstName || !lastName) return alert('Please enter patient first and last name');
+    
+    const patientData = {
+        first_name: firstName,
+        last_name: lastName,
+        dob: document.getElementById('patientDOB').value,
+        sex: document.getElementById('patientGender').value,
+        phone: document.getElementById('patientPhone').value,
+        address: document.getElementById('patientAddress').value,
+        marital_status: document.getElementById('patientMaritalStatus').value,
+        date_registered: document.getElementById('patientDateRegistered').value
+    };
+    
+    try {
+        if (editingPatientId) {
+            // Update existing patient
+            await updatePatient(editingPatientId, patientData);
+            const idx = patients.findIndex(p => p.patient_id === editingPatientId);
+            if (idx >= 0) {
+                patients[idx] = {...patients[idx], ...patientData};
+            }
+            alert('✅ Patient updated successfully');
+        } else {
+            // Add new patient
+            const result = await addPatient(patientData);
+            if (result) {
+                patients.push(result);
+                alert('✅ Patient added successfully');
+            }
+        }
+        
+        document.getElementById('patientForm').reset();
+        document.getElementById('patientId').value = '';
+        document.getElementById('patientIdInput').removeAttribute('readonly');
+        editingPatientId = null;
+        await loadPatients(); // Reload from database to ensure consistency
+        renderTable();
+    } catch (error) {
+        console.error('Error saving patient:', error);
+        alert('❌ Error saving patient: ' + (error.message || 'Unknown error'));
+    }
+});
+
+document.getElementById('clearBtn').addEventListener('click', () => {
+    document.getElementById('patientForm').reset();
+    document.getElementById('patientId').value = '';
+    editingPatientId = null;
+});
+
+// Load patients when page loads
+window.addEventListener('DOMContentLoaded', loadPatients);
+</script>
+
+</body>
+</html>

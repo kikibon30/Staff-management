@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Department Records - Wellmeadows Hospital</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f4f8; }
+        
+        .navbar { background: #0f3b5c; padding: 0; box-shadow: 0 2px 10px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 100; }
+        .navbar-content { max-width: 1400px; margin: 0 auto; display: flex; align-items: center; padding: 16px 24px; }
+        .logo { font-size: 1.8rem; font-weight: 700; color: white; margin-right: 40px; }
+        .nav-menu { display: flex; gap: 0; flex: 1; }
+        .nav-item { color: white; padding: 16px 20px; text-decoration: none; border-bottom: 3px solid transparent; transition: 0.3s; font-weight: 500; display: inline-block; }
+        .nav-item:hover { background: rgba(255,255,255,0.1); border-bottom-color: #4db8ff; }
+        .nav-item.active { background: rgba(255,255,255,0.2); border-bottom-color: #4db8ff; }
+        
+        .container { max-width: 1400px; margin: 0 auto; padding: 24px; }
+        h1 { color: #0f3b5c; margin-bottom: 8px; font-size: 2rem; }
+        .sub { color: #5a6e7c; margin-bottom: 24px; }
+        
+        .card { background: white; border-radius: 16px; border: 1px solid #e2e8f0; overflow: hidden; margin-bottom: 24px; }
+        .card-header { background: #f8fafc; padding: 16px 20px; border-bottom: 1px solid #e2e8f0; font-weight: 700; font-size: 1.1rem; color: #1e4a6e; display: flex; justify-content: space-between; align-items: center; }
+        .card-body { padding: 20px; }
+        
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #e2e8f0; font-size: 0.85rem; }
+        th { background: #f8fafc; font-weight: 600; color: #1e4a6e; }
+        tr:hover { background: #f9f9f9; }
+        
+        .empty-state { text-align: center; padding: 40px; color: #94a3b8; }
+        .dept-card { background: linear-gradient(135deg, #e6f2ff 0%, #f0f8ff 100%); border-left: 4px solid #2c7da0; border-radius: 12px; padding: 16px; margin-bottom: 12px; }
+        .dept-name { font-size: 1.1rem; font-weight: 700; color: #0f3b5c; margin-bottom: 8px; }
+        .dept-info { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 0.85rem; color: #5a6e7c; }
+        .dept-info-item { display: flex; gap: 6px; }
+        .dept-info-label { font-weight: 600; }
+        
+        .summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px; margin-bottom: 24px; }
+        .summary-card { background: linear-gradient(135deg, #f8fafc 0%, #f0f4f8 100%); border-radius: 12px; padding: 16px; border-left: 4px solid #2c7da0; }
+        .summary-value { font-size: 1.8rem; font-weight: 700; color: #0f3b5c; }
+        .summary-label { font-size: 0.85rem; color: #5a6e7c; margin-top: 4px; }
+        
+        .search-box { width: 300px; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.9rem; }
+        
+        button { background: #2c7da0; color: white; border: none; padding: 8px 16px; border-radius: 20px; font-weight: 600; cursor: pointer; font-size: 0.85rem; transition: 0.3s; }
+        button:hover { background: #1f5e7e; }
+        
+        @media (max-width: 1000px) { .search-box { width: 100%; } .summary { grid-template-columns: 1fr 1fr; } }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
+</head>
+<body>
+
+<nav class="navbar">
+    <div class="navbar-content">
+        <div class="logo">🏥 Wellmeadows</div>
+        <div class="nav-menu">
+            <a href="index.html" class="nav-item">📊 Dashboard</a>
+            <a href="staff-management.html" class="nav-item">👥 Staff Mgmt</a>
+            <a href="department-management.html" class="nav-item">🏢 Department Mgmt</a>
+            <a href="patient-records.html" class="nav-item">🩺 Patients</a>
+            <a href="staff-records.html" class="nav-item">📋 Staff Records</a>
+            <a href="department-records.html" class="nav-item active">📁 Dept Records</a>
+        </div>
+    </div>
+</nav>
+
+<div class="container">
+    <h1>📁 Department Records</h1>
+    <div class="sub">Complete view of all hospital departments</div>
+    
+    <!-- SUMMARY CARDS -->
+    <div class="summary">
+        <div class="summary-card">
+            <div class="summary-value" id="totalDepts">0</div>
+            <div class="summary-label">Total Departments</div>
+        </div>
+        <div class="summary-card">
+            <div class="summary-value" id="totalLocations">0</div>
+            <div class="summary-label">Locations</div>
+        </div>
+        <div class="summary-card">
+            <div class="summary-value" id="totalBudget">$0</div>
+            <div class="summary-label">Combined Budget</div>
+        </div>
+    </div>
+    
+    <!-- DEPARTMENTS LIST -->
+    <div class="card">
+        <div class="card-header">
+            <span>📁 All Departments</span>
+            <input type="text" id="searchBox" class="search-box" placeholder="🔍 Search by name or location...">
+        </div>
+        <div class="card-body">
+            <div id="deptsList">
+                <div class="empty-state">No departments found. Add departments from Department Management page.</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- DETAILED TABLE VIEW -->
+    <div class="card">
+        <div class="card-header">📊 Departments Summary Table</div>
+        <div class="card-body" style="padding: 0;">
+            <div style="overflow-x: auto; min-height: 300px;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Department Name</th>
+                            <th>Location</th>
+                            <th>Department Head</th>
+                            <th>Phone</th>
+                            <th>Budget</th>
+                        </tr>
+                    </thead>
+                    <tbody id="deptsTableBody">
+                        <tr><td colspan="6" class="empty-state">No departments found. Add departments from Department Management page.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <div style="text-align: center; margin-top: 20px; color: #5a6e7c;">
+        <p>💡 Tip: Go to <strong>Department Management</strong> to add or edit department records</p>
+    </div>
+</div>
+
+<script src="supabase-config.js"></script>
+<script>
+let allDepts = [];
+
+function deptName(d) {
+    return (d.dept_name || d.name || '').trim();
+}
+
+function deptLocation(d) {
+    return (d.dept_location || d.location || '').trim();
+}
+
+function deptHead(d) {
+    if (d.staff_id != null) return String(d.staff_id);
+    if (d.manager_staff_id != null) return String(d.manager_staff_id);
+    return (d.head || '').trim();
+}
+
+function deptPhone(d) {
+    return (d.dept_phone || d.phone || '').trim();
+}
+
+function deptBudgetNum(d) {
+    const v = d.budget;
+    if (v == null || v === '') return 0;
+    const n = parseFloat(v);
+    return Number.isFinite(n) ? n : 0;
+}
+
+function deptDescription(d) {
+    return (d.description || '').trim() || '-';
+}
+
+function deptNumericId(d) {
+    if (d.dept_id != null) return d.dept_id;
+    if (d.deptIdInput != null) return d.deptIdInput;
+    return d.id;
+}
+
+function filteredDeptsForSearch() {
+    const q = document.getElementById('searchBox').value.toLowerCase();
+    if (!q) return allDepts;
+    return allDepts.filter(dept => {
+        const name = deptName(dept).toLowerCase();
+        const loc = deptLocation(dept).toLowerCase();
+        const head = deptHead(dept).toLowerCase();
+        return name.includes(q) || loc.includes(q) || head.includes(q);
+    });
+}
+
+function applySearchFilter() {
+    const filtered = filteredDeptsForSearch();
+    renderDeptsList(filtered);
+    renderTable(filtered);
+}
+
+async function reloadDepartmentsFromSupabase() {
+    clearSupabaseErrorState();
+    allDepts = (await getAllDepartments()) || [];
+    const err = getLastSupabaseError();
+    if (err) {
+        console.error(err);
+        alert('Could not load departments from Supabase. Check the browser console and your project URL/key.');
+    }
+    applySearchFilter();
+    updateSummary();
+}
+
+function renderDeptsList(dataToShow = allDepts) {
+    const container = document.getElementById('deptsList');
+    if (dataToShow.length === 0) {
+        container.innerHTML =
+            '<div class="empty-state">No departments found. Add departments from Department Management page.</div>';
+        return;
+    }
+    let html = '';
+    dataToShow.forEach(dept => {
+        const id = deptNumericId(dept);
+        html += `
+            <div class="dept-card">
+                <div class="dept-name">🏢 ${deptName(dept) || '(unnamed)'}</div>
+                <div class="dept-info">
+                    <div class="dept-info-item">
+                        <span class="dept-info-label">ID:</span>
+                        <span>${id != null ? id : '-'}</span>
+                    </div>
+                    <div class="dept-info-item">
+                        <span class="dept-info-label">Location:</span>
+                        <span>${deptLocation(dept) || '-'}</span>
+                    </div>
+                    <div class="dept-info-item">
+                        <span class="dept-info-label">Head (staff ID):</span>
+                        <span>${deptHead(dept) || '-'}</span>
+                    </div>
+                    <div class="dept-info-item">
+                        <span class="dept-info-label">Phone:</span>
+                        <span>${deptPhone(dept) || '-'}</span>
+                    </div>
+                    <div class="dept-info-item">
+                        <span class="dept-info-label">Budget:</span>
+                        <span>$${deptBudgetNum(dept).toFixed(2)}</span>
+                    </div>
+                    <div class="dept-info-item">
+                        <span class="dept-info-label">Description:</span>
+                        <span>${deptDescription(dept)}</span>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    container.innerHTML = html;
+}
+
+function renderTable(dataToShow = allDepts) {
+    const tbody = document.getElementById('deptsTableBody');
+    if (dataToShow.length === 0) {
+        tbody.innerHTML =
+            '<tr><td colspan="6" class="empty-state">No departments found. Add departments from Department Management page.</td></tr>';
+        return;
+    }
+    tbody.innerHTML = '';
+    dataToShow.forEach(dept => {
+        const row = tbody.insertRow();
+        const id = deptNumericId(dept);
+        row.insertCell(0).innerText = id != null ? String(id) : '-';
+        row.insertCell(1).innerText = deptName(dept) || '-';
+        row.insertCell(2).innerText = deptLocation(dept) || '-';
+        row.insertCell(3).innerText = deptHead(dept) || '-';
+        row.insertCell(4).innerText = deptPhone(dept) || '-';
+        row.insertCell(5).innerText = '$' + deptBudgetNum(dept).toFixed(2);
+    });
+}
+
+function updateSummary() {
+    const total = allDepts.length;
+    const locations = new Set(allDepts.map(d => deptLocation(d)).filter(l => l)).size;
+    const totalBudget = allDepts.reduce((sum, d) => sum + deptBudgetNum(d), 0);
+
+    document.getElementById('totalDepts').innerText = total;
+    document.getElementById('totalLocations').innerText = locations;
+    document.getElementById('totalBudget').innerText = '$' + totalBudget.toFixed(2);
+}
+
+document.getElementById('searchBox').addEventListener('keyup', () => {
+    applySearchFilter();
+});
+
+window.addEventListener('DOMContentLoaded', reloadDepartmentsFromSupabase);
+setInterval(reloadDepartmentsFromSupabase, 5000);
+</script>
+
+</body>
+</html>

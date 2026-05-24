@@ -1,0 +1,13 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "../wellmeadowsUI"
+		}
+	],
+	"settings": {
+		"liveServer.settings.multiRootWorkspaceName": "Wellmeadowsystem"
+	}
+}
