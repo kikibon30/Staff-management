@@ -1,0 +1,328 @@
+============================================================================
+STAFF & DEPARTMENT MANAGEMENT MODULE - FUNCTIONS & PROCEDURES GUIDE
+============================================================================
+
+OVERVIEW:
+This module manages hospital staff and their assignments to departments/wards,
+tracks role changes, schedules shifts, and maintains staff responsibilities.
+
+============================================================================
+DATABASE FUNCTIONS (PostgreSQL/Supabase)
+============================================================================
+
+1. check_staff_availability(staff_id)
+---
+PURPOSE: Verify if a staff member can be assigned to a new department
+WHEN TO USE: Before assigning staff to avoid conflicts
+HOW IT WORKS:
+  - Checks if staff exists in database
+  - Checks if staff already has an active (non-ended) assignment
+  - Returns TRUE if available, FALSE if already assigned elsewhere
+EXAMPLE SQL: SELECT check_staff_availability(5);
+RETURNS: BOOLEAN (true/false)
+
+2. get_staff_by_department(dept_id)
+---
+PURPOSE: Get list of all staff currently working in a department
+WHEN TO USE: Department reports, staffing verification, management
+HOW IT WORKS:
+  - Searches staff_department_assignment table
+  - Finds all assignments where end_date IS NULL (still active)
+  - Joins with staff table to get full staff details
+EXAMPLE SQL: SELECT * FROM get_staff_by_department(2);
+RETURNS: 
+  - staff_id
+  - first_name
+  - last_name
+  - position
+  - start_date
+
+3. count_staff_by_position()
+---
+PURPOSE: Generate summary of how many staff in each position (for analytics)
+WHEN TO USE: Dashboard statistics, workforce planning, hiring decisions
+HOW IT WORKS:
+  - Groups all staff by position column
+  - Counts records in each group
+  - Orders by highest count first
+EXAMPLE SQL: SELECT * FROM count_staff_by_position();
+RETURNS:
+  - position (Doctor, Nurse, etc)
+  - staff_count (number of staff in that role)
+
+4. get_staff_workload(staff_id, week_date)
+---
+PURPOSE: See all shifts scheduled for a specific staff member in a week
+WHEN TO USE: Workload management, conflict detection, schedule viewing
+HOW IT WORKS:
+  - Searches shift table for staff's scheduled shifts
+  - Filters by specific week_commencing date
+  - Returns shift type (Morning/Afternoon/Night) and ward assignment
+EXAMPLE SQL: SELECT * FROM get_staff_workload(3, '2026-05-12');
+RETURNS:
+  - shift_id
+  - ward_id
+  - shift_type
+  - week_commencing
+
+5. validate_staff_can_work(staff_id)
+---
+PURPOSE: Check if staff member is legally/validly able to work
+WHEN TO USE: Before assigning shifts or responsibilities
+HOW IT WORKS:
+  - Verifies staff exists in database
+  - Checks contract_type is not null (has valid employment contract)
+  - Returns TRUE if valid, FALSE if not
+EXAMPLE SQL: SELECT validate_staff_can_work(7);
+RETURNS: BOOLEAN (true/false)
+
+============================================================================
+DATABASE PROCEDURES (PostgreSQL/Supabase)
+============================================================================
+
+6. assign_staff_to_department(p_staff_id, p_dept_id, p_start_date)
+---
+PURPOSE: Assign/transfer a staff member to a department with full validation
+WHEN TO USE: New hire, department transfer, role change
+HOW IT WORKS:
+  1. Validates staff exists
+  2. Validates department exists
+  3. Ends any previous assignments (if switching departments)
+  4. Creates new assignment record with start_date
+EXAMPLE: CALL assign_staff_to_department(5, 2, '2026-05-15');
+REQUIREMENTS: Must pass valid staff_id, dept_id, and date
+ERROR HANDLING: Raises exception if staff/department not found
+
+7. record_role_change(p_staff_id, p_new_position, p_change_date)
+---
+PURPOSE: Log a staff member's promotion/role change (creates audit trail)
+WHEN TO USE: Staff promotion, position change, responsibility shift
+HOW IT WORKS:
+  1. Gets current position from staff table
+  2. Inserts record into staff_role_history table (previous → new)
+  3. Updates staff table with new position
+  4. Creates permanent record of change (cannot be deleted)
+EXAMPLE: CALL record_role_change(3, 'Senior Nurse', '2026-05-15');
+CREATES: History record showing Doctor → Senior Nurse on 2026-05-15
+
+8. schedule_staff_shift(p_staff_id, p_ward_id, p_shift_type, p_week_commencing)
+---
+PURPOSE: Schedule a staff member to work a specific shift (Morning/Afternoon/Night)
+WHEN TO USE: Create weekly schedules, assign ward rotations
+HOW IT WORKS:
+  1. Validates staff exists
+  2. Validates ward exists
+  3. Validates shift_type is one of: Morning, Afternoon, Night, On-call
+  4. Inserts shift record
+  5. Links staff → ward → shift type
+EXAMPLE: CALL schedule_staff_shift(2, 1, 'Morning', '2026-05-12');
+SHIFT TYPES: 'Morning', 'Afternoon', 'Night', 'On-call'
+
+============================================================================
+TRIGGERS (Automatic Database Actions)
+============================================================================
+
+9. prevent_duplicate_assignments_trigger
+---
+PURPOSE: AUTOMATICALLY prevent assigning same staff to 2+ departments at once
+HOW IT WORKS:
+  - Runs BEFORE INSERT on staff_department_assignment
+  - Checks if staff already has active assignment elsewhere
+  - Blocks insert and raises error if conflict found
+BENEFIT: Prevents data inconsistency at database level (not just UI)
+
+10. update_staff_timestamp_trigger
+---
+PURPOSE: AUTOMATICALLY update 'updated_at' column when staff record changes
+HOW IT WORKS:
+  - Runs BEFORE UPDATE on staff table
+  - Sets updated_at = current timestamp
+  - No manual timestamp management needed
+BENEFIT: Always have accurate "last modified" date for audit trails
+
+============================================================================
+FRONTEND JAVASCRIPT FUNCTIONS
+============================================================================
+
+11. assignStaffToDepartment(staffId, deptId, startDate)
+---
+PURPOSE: UI function to assign staff (calls backend procedure)
+WHEN TO USE: Staff transfer form, assignment modal
+EXAMPLE:
+  const success = await assignStaffToDepartment(5, 2, '2026-05-15');
+VALIDATION: Checks for empty values before sending to backend
+RETURN: true (success) or false (error)
+
+12. getStaffByDepartment(deptId)
+---
+PURPOSE: Fetch and display all staff in a department
+WHEN TO USE: Department details page, staff listing
+EXAMPLE:
+  const staff = await getStaffByDepartment(2);
+  staff.forEach(s => console.log(s.first_name + ' ' + s.last_name));
+RETURN: Array of staff objects or empty array if none found
+
+13. getStaffByPosition()
+---
+PURPOSE: Get count of staff in each position (for dashboard/reports)
+WHEN TO USE: Dashboard statistics, workforce overview
+EXAMPLE:
+  const stats = await getStaffByPosition();
+  // Returns: [{position: 'Doctor', staff_count: 5}, {position: 'Nurse', staff_count: 12}]
+RETURN: Array of position statistics
+
+14. recordRoleChange(staffId, newPosition, changeDate)
+---
+PURPOSE: Log a role/position change (calls backend procedure)
+WHEN TO USE: Promotion form, role change dialog
+EXAMPLE:
+  await recordRoleChange(3, 'Senior Nurse', '2026-05-15');
+CREATES: Permanent history record of change
+RETURN: true (success) or false (error)
+
+15. checkStaffAvailability(staffId)
+---
+PURPOSE: Check if staff can be assigned (not already assigned elsewhere)
+WHEN TO USE: Before showing assignment form
+EXAMPLE:
+  if (await checkStaffAvailability(5)) {
+    // Safe to assign
+  } else {
+    // Staff already assigned somewhere
+  }
+RETURN: true (available) or false (already assigned)
+
+16. scheduleStaffShift(staffId, wardId, shiftType, weekCommencing)
+---
+PURPOSE: Create a shift assignment for a staff member
+WHEN TO USE: Schedule building, weekly roster creation
+EXAMPLE:
+  await scheduleStaffShift(2, 1, 'Morning', '2026-05-12');
+VALIDATIONS: Checks staff, ward exist and shift_type is valid
+RETURN: true (success) or false (error)
+
+17. getStaffWorkload(staffId, weekDate)
+---
+PURPOSE: Show all shifts for a staff member in a specific week
+WHEN TO USE: Staff schedule view, workload management
+EXAMPLE:
+  const shifts = await getStaffWorkload(2, '2026-05-12');
+  // Returns all shifts for staff #2 in week starting 2026-05-12
+RETURN: Array of shift objects
+
+18. validateStaffCanWork(staffId)
+---
+PURPOSE: Check if staff is eligible to work (has contract, etc)
+WHEN TO USE: Before assigning shifts
+EXAMPLE:
+  if (!await validateStaffCanWork(5)) {
+    alert('Cannot assign - no valid contract');
+  }
+RETURN: true (can work) or false (cannot work)
+
+19. getStaffRoleHistory(staffId)
+---
+PURPOSE: Display all role changes for a staff member (audit trail)
+WHEN TO USE: Staff profile/history page
+EXAMPLE:
+  const history = await getStaffRoleHistory(3);
+  // Shows: Doctor (2024) → Senior Doctor (2025) → Consultant (2026)
+RETURN: Array of role history records with dates
+
+20. getActiveAssignments()
+---
+PURPOSE: Get all current staff-department assignments (no ended ones)
+WHEN TO USE: Staff management dashboard, assignment list
+EXAMPLE:
+  const assignments = await getActiveAssignments();
+JOINS: Pulls staff name and department name automatically
+RETURN: Array of active assignments with full details
+
+21. endStaffAssignment(assignmentId, endDate)
+---
+PURPOSE: Terminate/end a staff member's department assignment
+WHEN TO USE: Staff leaving department, transfer preparation
+EXAMPLE:
+  await endStaffAssignment(15, '2026-06-01');
+EFFECT: Sets end_date, stops them appearing in active assignments
+RETURN: true (success) or false (error)
+
+22. generateStaffReport()
+---
+PURPOSE: Create comprehensive staff management report for administration
+WHEN TO USE: Monthly reports, stakeholder presentations, analysis
+EXAMPLE:
+  const report = await generateStaffReport();
+  console.log(report.totalStaff);      // 50
+  console.log(report.staffByPosition);  // {Doctor: 5, Nurse: 25, ...}
+RETURN: Report object with statistics and timestamps
+
+============================================================================
+IMPLEMENTATION CHECKLIST
+============================================================================
+
+DATABASE SETUP:
+[ ] Run STAFF_MANAGEMENT_FUNCTIONS.sql in Supabase SQL Editor
+[ ] Verify all functions/procedures created (no errors)
+[ ] Test RLS policies allow access
+
+FRONTEND SETUP:
+[ ] Include staff_management_functions.js before using any functions
+[ ] Ensure supabase-config.js is loaded first
+[ ] Add UI elements (forms, buttons) that call these functions
+
+TESTING:
+[ ] Test staff assignment (check_staff_availability → assign_staff_to_department)
+[ ] Test role changes (record_role_change + verify in history)
+[ ] Test shift scheduling (schedule_staff_shift + verify workload)
+[ ] Test reports (generateStaffReport)
+[ ] Test error cases (invalid IDs, missing data, etc)
+
+DEPLOYMENT:
+[ ] Add these to staff-management.html <script> section
+[ ] Add to staff-records.html for viewing
+[ ] Add to any administration dashboard
+[ ] Update navigation if adding new management pages
+
+============================================================================
+EXAMPLE WORKFLOW: Hiring New Staff Member
+============================================================================
+
+1. Admin creates staff record in UI
+   → addStaff() adds to database with auto-generated staff_id
+
+2. Admin assigns to department
+   → checkStaffAvailability(newStaffId) verifies not already assigned
+   → assignStaffToDepartment(newStaffId, deptId, startDate) creates assignment
+
+3. Admin creates initial shifts
+   → validateStaffCanWork(newStaffId) checks eligibility
+   → scheduleStaffShift(newStaffId, wardId, "Morning", weekDate)
+
+4. Later: Staff gets promoted
+   → recordRoleChange(newStaffId, "Senior Nurse", promotionDate)
+   → Automatically updates position and creates history record
+
+5. View history anytime
+   → getStaffRoleHistory(newStaffId) shows all promotions/changes
+   → Provides audit trail for HR
+
+============================================================================
+DATABASE SCHEMA REFERENCE
+============================================================================
+
+TABLES USED:
+- staff: Employee records (staff_id, first_name, last_name, position, etc)
+- staff_department_assignment: Who works in which department (assignment_id, staff_id, dept_id, start_date, end_date)
+- staff_role_history: Log of position changes (role_history_id, staff_id, previous_position, new_position, change_date)
+- shift: Scheduled work periods (shift_id, staff_id, ward_id, shift_type, week_commencing)
+- department: Hospital departments (dept_id, dept_name)
+- ward: Hospital wards (ward_id, ward_name)
+
+KEY CONSTRAINTS:
+- Staff can only be assigned to ONE department at a time (end previous before assigning new)
+- All IDs must exist before creating assignments/shifts
+- Role changes create permanent audit trail
+- Shifts belong to specific weeks (Monday of week)
+
+============================================================================
