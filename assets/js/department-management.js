@@ -16,7 +16,7 @@ function clearSupabaseErrorState() { lastSupabaseError = null; }
 
 async function getAllDepartments() {
     try {
-        const { data, error } = await window.supabaseClient.from('DEPARTMENT').select('*');
+        const { data, error } = await window.supabaseClient.from('department').select('*');
         if (error) throw error;
         return data || [];
     } catch(e) { lastSupabaseError = e; return []; }
@@ -24,7 +24,7 @@ async function getAllDepartments() {
 
 async function getAllStaff() {
     try {
-        const { data, error } = await window.supabaseClient.from('STAFF').select('staff_id, first_name, last_name, position, phone');
+        const { data, error } = await window.supabaseClient.from('staff').select('staff_id, first_name, last_name, position, phone');
         if (error) throw error;
         return data || [];
     } catch(e) { lastSupabaseError = e; return []; }
@@ -43,7 +43,7 @@ async function addDepartment(deptData) {
         };
         
         const { data, error } = await window.supabaseClient
-            .from('DEPARTMENT')
+            .from('department')
             .insert([payload])
             .select();
         if (error) throw error;
@@ -64,7 +64,7 @@ async function updateDepartment(id, deptData) {
         };
         
         const { data, error } = await window.supabaseClient
-            .from('DEPARTMENT')
+            .from('department')
             .update(payload)
             .eq('dept_id', id)
             .select();
@@ -76,7 +76,7 @@ async function updateDepartment(id, deptData) {
 async function deleteDepartment(id) {
     try {
         const { error } = await window.supabaseClient
-            .from('DEPARTMENT')
+            .from('department')
             .delete()
             .eq('dept_id', id);
         if (error) throw error;
@@ -181,6 +181,18 @@ async function deleteDepartmentRecord(deptId) {
 // DATA LOADING
 // ============================================
 async function loadDepartments() {
+    // Wait for Supabase client
+    let retries = 0;
+    while (!window.supabaseClient && retries < 50) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+        retries++;
+    }
+    
+    if (!window.supabaseClient) {
+        alert('Error: Could not connect to Supabase');
+        return;
+    }
+    
     try {
         clearSupabaseErrorState();
         const data = await getAllDepartments();
@@ -189,11 +201,22 @@ async function loadDepartments() {
         renderDepartmentsTable();
     } catch (error) {
         console.error('Error loading departments:', error);
-        alert('Could not load departments from Supabase. Please check your connection.');
+        alert('Could not load departments from Supabase: ' + (error.message || error));
     }
 }
 
 async function loadStaffReference() {
+    // Wait for Supabase client
+    let retries = 0;
+    while (!window.supabaseClient && retries < 50) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+        retries++;
+    }
+    
+    if (!window.supabaseClient) {
+        return;
+    }
+    
     try {
         const data = await getAllStaff();
         staffMembers = data || [];

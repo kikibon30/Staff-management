@@ -516,3 +516,47 @@ async function testConnection() {
 window.addEventListener('load', async () => {
     await testConnection();
 });
+
+// ============================================================================
+// INITIALIZE SUPABASE CLIENT
+// ============================================================================
+// This creates the window.supabaseClient instance that other scripts depend on
+// With retry logic to ensure the library is loaded
+
+function initializeSupabaseClient() {
+    if (window.supabaseClient) {
+        return true; // Already initialized
+    }
+    
+    if (window.supabase && window.supabase.createClient) {
+        try {
+            window.supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            console.log('✓ Supabase client initialized successfully');
+            console.log('URL:', SUPABASE_URL);
+            return true;
+        } catch (e) {
+            console.error('✗ Error creating Supabase client:', e);
+            return false;
+        }
+    }
+    return false;
+}
+
+// Try to initialize immediately
+if (!initializeSupabaseClient()) {
+    // If not available immediately, wait for it with retries
+    let retries = 0;
+    const maxRetries = 20; // Try for up to 2 seconds (20 * 100ms)
+    
+    const retryInit = setInterval(() => {
+        retries++;
+        if (initializeSupabaseClient()) {
+            clearInterval(retryInit);
+        } else if (retries >= maxRetries) {
+            clearInterval(retryInit);
+            console.error('✗ Failed to initialize Supabase client after retries');
+            console.error('  Window.supabase:', window.supabase);
+            console.error('  Make sure the Supabase CDN script loaded before this config file');
+        }
+    }, 100);
+}

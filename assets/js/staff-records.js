@@ -17,7 +17,7 @@ let searchTerm = '';
 async function getAllStaff() {
     try {
         const { data, error } = await window.supabaseClient
-            .from('STAFF')
+            .from('staff')
             .select('*')
             .order('staff_id', { ascending: true });
         if (error) throw error;
@@ -28,7 +28,7 @@ async function getAllStaff() {
 async function getAllDepartments() {
     try {
         const { data, error } = await window.supabaseClient
-            .from('DEPARTMENT')
+            .from('department')
             .select('*');
         if (error) throw error;
         return data || [];
@@ -38,7 +38,7 @@ async function getAllDepartments() {
 async function getStaffAssignments() {
     try {
         const { data, error } = await window.supabaseClient
-            .from('STAFF_DEPARTMENT')
+            .from('staff_department_assignment')
             .select('*')
             .is('end_date', null);
         if (error) throw error;
@@ -204,6 +204,18 @@ function renderDepartmentDistribution() {
 // ============================================
 
 async function loadAllData() {
+    // Wait for Supabase client
+    let retries = 0;
+    while (!window.supabaseClient && retries < 50) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+        retries++;
+    }
+    
+    if (!window.supabaseClient) {
+        alert('Error: Could not connect to Supabase');
+        return;
+    }
+    
     try {
         // Show loading state
         const tbody = document.getElementById('staffRecordsTable');
