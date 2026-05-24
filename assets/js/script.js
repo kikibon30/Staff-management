@@ -35,7 +35,7 @@ async function getAllDepartments() {
 
 async function getAllRecords(table) {
     try {
-        const { data, error } = await window.supabaseClient.from(table.toUpperCase()).select('*');
+        const { data, error } = await window.supabaseClient.from(table).select('*');
         if (error) throw error;
         return data || [];
     } catch(e) { lastSupabaseError = e; return []; }
@@ -43,7 +43,7 @@ async function getAllRecords(table) {
 
 async function getActiveAssignments() {
     try {
-        const { data, error } = await window.supabaseClient.from('staff_department').select('*');
+        const { data, error } = await window.supabaseClient.from('staff_department_assignment').select('*');
         if (error) throw error;
         return data || [];
     } catch(e) { lastSupabaseError = e; return []; }
@@ -85,9 +85,8 @@ async function deleteStaff(id) {
 
 async function addAssignment(assign) {
     try {
-        const payload = { staff_id: assign.staffId, dept_id: assign.deptId };
-        if (assign.wardId) payload.ward_id = assign.wardId;
-        const { data, error } = await window.supabaseClient.from('staff_department').insert([payload]).select();
+        const payload = { staff_id: assign.staffId, ward_id: assign.wardId, start_date: new Date().toISOString().split('T')[0] };
+        const { data, error } = await window.supabaseClient.from('staff_department_assignment').insert([payload]).select();
         if (error) throw error;
         return data?.[0] || null;
     } catch(e) { lastSupabaseError = e; return null; }
@@ -226,14 +225,14 @@ function renderAssignments() {
     let html = '';
     staffAssignments.forEach(ass => {
         const staff = staffRecords.find(s => s.staff_id === ass.staff_id);
-        const dept = departments.find(d => d.dept_id === ass.dept_id);
+        const ward = wards.find(w => w.ward_id === ass.ward_id);
         const staffName = staff ? `${staff.first_name} ${staff.last_name}` : 'Unknown';
-        const deptName = dept ? dept.dept_name : 'None';
+        const wardName = ward ? ward.ward_name : 'Unknown Ward';
         html += `
             <div class="assignment-item">
                 <div class="assignment-info">
                     <strong>${escapeHtml(staffName)}</strong>
-                    <div class="assignment-dept">Department: ${escapeHtml(deptName)}</div>
+                    <div class="assignment-dept">Ward: ${escapeHtml(wardName)}</div>
                 </div>
                 <i class="fas fa-trash-alt delete-icon" onclick="deleteAssignmentRecord(${ass.assignment_id})"></i>
             </div>
@@ -270,7 +269,7 @@ function renderSchedulesAndRoles() {
         staffRoles.slice(-5).forEach(r => {
             const staff = staffRecords.find(st => st.staff_id === r.staff_id);
             const staffName = staff ? `${staff.first_name} ${staff.last_name}` : 'Staff';
-            html += `<div class="assignment-item"><span>${escapeHtml(staffName)} → "${escapeHtml(r.new_position)}"</span></div>`;
+            html += `<div class="assignment-item"><span>${escapeHtml(staffName)} → "${escapeHtml(r.role)}"</span></div>`;
         });
     }
     
@@ -323,18 +322,9 @@ function populateDropdowns() {
         }
     });
     
-    const deptSelect = document.getElementById('assignDept');
-    if (deptSelect) {
-        let options = '<option value="">-- Select Department --</option>';
-        departments.forEach(d => {
-            options += `<option value="${d.dept_id}">${escapeHtml(d.dept_name)}</option>`;
-        });
-        deptSelect.innerHTML = options;
-    }
-    
     const wardSelect = document.getElementById('assignWard');
     if (wardSelect) {
-        let options = '<option value="">-- None --</option>';
+        let options = '<option value="">-- Select Ward --</option>';
         wards.forEach(w => {
             options += `<option value="${w.ward_id}">${escapeHtml(w.ward_name)}</option>`;
         });
@@ -402,16 +392,17 @@ document.getElementById('clearBtn').addEventListener('click', () => {
 
 document.getElementById('assignBtn').addEventListener('click', async () => {
     const staffId = parseInt(document.getElementById('assignStaff').value);
-    const deptId = parseInt(document.getElementById('assignDept').value);
     const wardId = parseInt(document.getElementById('assignWard').value);
     
-    if (!staffId || !deptId) return alert('Please select staff and department');
+    if (!staffId || !wardId) return alert('Please select staff and ward');
     
     try {
-        const newAssignment = await addAssignment({ staffId, deptId, wardId: Number.isFinite(wardId) ? wardId : null });
+        const newAssignment = await addAssignment({ staffId, wardId });
         if (newAssignment) {
             staffAssignments.push(newAssignment);
-            alert('Assignment created successfully');
+            alert('Staff assigned to ward successfully');
+            document.getElementById('assignStaff').value = '';
+            document.getElementById('assignWard').value = '';
             refreshUI();
         } else {
             alert('Could not create assignment');
@@ -436,11 +427,10 @@ document.getElementById('scheduleBtn').addEventListener('click', async () => {
         if (newRole) {
             const roleData = {
                 staff_id: staffId,
-                new_position: newRole,
-                previous_position: 'Unknown',
-                change_date: new Date().toISOString().split('T')[0]
+                role: newRole,
+                start_date: new Date().toISOString().split('T')[0]
             };
-            const role = await insertRecord('STAFF_ROLE_HISTORY', roleData);
+            const role = await insertRecord('staff_role_history', roleData);
             if (role) staffRoles.push(role);
         }
         

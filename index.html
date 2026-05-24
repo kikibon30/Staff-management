@@ -42,6 +42,10 @@
             <i class="fas fa-user-md"></i>
             <span>Staff Management</span>
           </a>
+          <a href="./pages/ward-management.html" class="nav-item" data-page="wards">
+            <i class="fas fa-hospital-alt"></i>
+            <span>Ward Management</span>
+          </a>
           <a href="./pages/department-management.html" class="nav-item" data-page="dept">
             <i class="fas fa-building"></i>
             <span>Department Management</span>
@@ -132,11 +136,11 @@
             </div>
           </div>
 
-          <!-- Assign Staff to Departments & Wards -->
+          <!-- Assign Staff to Wards -->
           <div class="card">
             <div class="card-header">
               <i class="fas fa-exchange-alt"></i>
-              <h3>Department & Ward Assignment</h3>
+              <h3>Ward Assignment</h3>
             </div>
             <div class="card-body">
               <div class="form-group">
@@ -144,17 +148,13 @@
                 <select id="assignStaff"></select>
               </div>
               <div class="form-group">
-                <label>Department</label>
-                <select id="assignDept"></select>
-              </div>
-              <div class="form-group">
-                <label>Ward (Optional)</label>
+                <label>Ward</label>
                 <select id="assignWard">
-                  <option value="">-- None --</option>
+                  <option value="">-- Select Ward --</option>
                 </select>
               </div>
               <button id="assignBtn" class="btn-primary">
-                <i class="fas fa-link"></i> Create Assignment
+                <i class="fas fa-link"></i> Assign to Ward
               </button>
 
               <hr class="divider" />
