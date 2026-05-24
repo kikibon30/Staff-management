@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Staff Records | Wellmeadows Hospital</title>
+    <!-- Supabase Library -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Font Awesome 6 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+    <!-- External CSS -->
+    <link rel="stylesheet" href="/assets/css/staff-records.css">
+    <!-- Supabase Config -->
+    <script src="/assets/js/supabase-config.js"></script>
+</head>
+<body>
+
+<div class="app-container">
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="logo-area">
+                <i class="fas fa-hospital-user logo-icon"></i>
+                <div class="logo-text">Wellmeadows</div>
+            </div>
+            <p class="logo-sub">Staff Records</p>
+        </div>
+        
+        <nav class="sidebar-nav">
+            <a href="/index.html" class="nav-item">
+                <i class="fas fa-chalkboard-user"></i>
+                <span>Dashboard</span>
+            </a>
+            <a href="/pages/staff-management.html" class="nav-item">
+                <i class="fas fa-user-md"></i>
+                <span>Staff Management</span>
+            </a>
+            <a href="/pages/department-management.html" class="nav-item">
+                <i class="fas fa-building"></i>
+                <span>Department Management</span>
+            </a>
+            <a href="/pages/patient-records.html" class="nav-item">
+                <i class="fas fa-notes-medical"></i>
+                <span>Patients</span>
+            </a>
+            <a href="/pages/staff-records.html" class="nav-item active">
+                <i class="fas fa-id-card"></i>
+                <span>Staff Records</span>
+            </a>
+            <a href="/pages/department-records.html" class="nav-item">
+                <i class="fas fa-folder-tree"></i>
+                <span>Department Records</span>
+            </a>
+            <a href="#" class="nav-item">
+                <i class="fas fa-sliders-h"></i>
+                <span>Settings</span>
+            </a>
+        </nav>
+        
+        <div class="sidebar-footer">
+            <div class="status-indicator">
+                <i class="fas fa-circle"></i>
+                <span>Auto-Refresh Active</span>
+            </div>
+        </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="main-content">
+        <div class="content-header">
+            <h1>Staff Records</h1>
+            <p>Complete view of all hospital staff members with role-based color coding</p>
+        </div>
+
+        <!-- SUMMARY CARDS -->
+        <div class="summary-grid">
+            <div class="summary-card">
+                <div class="summary-icon">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div class="summary-info">
+                    <div class="summary-value" id="totalStaff">0</div>
+                    <div class="summary-label">Total Staff</div>
+                </div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-icon">
+                    <i class="fas fa-user-md"></i>
+                </div>
+                <div class="summary-info">
+                    <div class="summary-value" id="totalDoctors">0</div>
+                    <div class="summary-label">Doctors & Surgeons</div>
+                </div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-icon">
+                    <i class="fas fa-user-nurse"></i>
+                </div>
+                <div class="summary-info">
+                    <div class="summary-value" id="totalNurses">0</div>
+                    <div class="summary-label">Nurses</div>
+                </div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-icon">
+                    <i class="fas fa-user-tie"></i>
+                </div>
+                <div class="summary-info">
+                    <div class="summary-value" id="totalAdmins">0</div>
+                    <div class="summary-label">Administration</div>
+                </div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-icon">
+                    <i class="fas fa-flask"></i>
+                </div>
+                <div class="summary-info">
+                    <div class="summary-value" id="totalTechnical">0</div>
+                    <div class="summary-label">Technical Staff</div>
+                </div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-icon">
+                    <i class="fas fa-money-bill-wave"></i>
+                </div>
+                <div class="summary-info">
+                    <div class="summary-value" id="avgSalary">$0</div>
+                    <div class="summary-label">Avg. Salary</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- STAFF TABLE -->
+        <div class="card">
+            <div class="card-header">
+                <div class="header-left">
+                    <i class="fas fa-list"></i>
+                    <h3>All Staff Members</h3>
+                </div>
+                <div class="header-right">
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="searchBox" placeholder="Search by name, position, or phone...">
+                    </div>
+                    <button id="refreshBtn" class="btn-icon">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="card-body table-container">
+                <div class="table-wrapper">
+                    <table id="staffTable">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Full Name</th>
+                                <th>Position</th>
+                                <th>Department</th>
+                                <th>Phone</th>
+                                <th>Email</th>
+                                <th>Salary</th>
+                                <th>Contract</th>
+                            </tr>
+                        </thead>
+                        <tbody id="staffRecordsTable">
+                            <tr>
+                                <td colspan="8" class="empty-state">
+                                    <i class="fas fa-spinner fa-pulse"></i> Loading staff records...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- DEPARTMENT DISTRIBUTION CHART (Text-based) -->
+        <div class="card">
+            <div class="card-header">
+                <div class="header-left">
+                    <i class="fas fa-chart-pie"></i>
+                    <h3>Staff by Department</h3>
+                </div>
+            </div>
+            <div class="card-body">
+                <div id="deptDistribution" class="dept-distribution">
+                    <div class="empty-state">Loading department data...</div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<!-- External JavaScript -->
+<script src="/assets/js/staff-records.js"></script>
+</body>
+</html>

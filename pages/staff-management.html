@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Staff Management | Wellmeadows Hospital</title>
+    <!-- Supabase Library -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Font Awesome 6 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+    <!-- External CSS -->
+    <link rel="stylesheet" href="/assets/css/staff-management.css">
+    <!-- Supabase Config -->
+    <script src="/assets/js/supabase-config.js"></script>
+</head>
+<body>
+
+<div class="app-container">
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="logo-area">
+                <i class="fas fa-hospital-user logo-icon"></i>
+                <div class="logo-text">Wellmeadows</div>
+            </div>
+            <p class="logo-sub">Staff Management Module</p>
+        </div>
+        
+        <nav class="sidebar-nav">
+            <a href="/index.html" class="nav-item">
+                <i class="fas fa-chalkboard-user"></i>
+                <span>Dashboard</span>
+            </a>
+            <a href="/pages/staff-management.html" class="nav-item active">
+                <i class="fas fa-user-md"></i>
+                <span>Staff Management</span>
+            </a>
+            <a href="/pages/department-management.html" class="nav-item">
+                <i class="fas fa-building"></i>
+                <span>Department Management</span>
+            </a>
+            <a href="/pages/patient-records.html" class="nav-item">
+                <i class="fas fa-notes-medical"></i>
+                <span>Patients</span>
+            </a>
+            <a href="/pages/staff-records.html" class="nav-item">
+                <i class="fas fa-id-card"></i>
+                <span>Staff Records</span>
+            </a>
+            <a href="/pages/department-records.html" class="nav-item">
+                <i class="fas fa-folder-tree"></i>
+                <span>Department Records</span>
+            </a>
+            <a href="#" class="nav-item">
+                <i class="fas fa-sliders-h"></i>
+                <span>Settings</span>
+            </a>
+        </nav>  
+        
+        <div class="sidebar-footer">
+            <div class="status-indicator">
+                <i class="fas fa-circle"></i>
+                <span>System Online</span>
+            </div>
+        </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="main-content">
+        <div class="content-header">
+            <h1>Staff Management</h1>
+            <p>Add, edit, and manage hospital staff members with department assignments</p>
+        </div>
+
+        <!-- TABS -->
+        <div class="tabs-container">
+            <button class="tab-btn active" data-tab="staff">
+                <i class="fas fa-address-card"></i> Staff Records
+            </button>
+            <button class="tab-btn" data-tab="assignments">
+                <i class="fas fa-exchange-alt"></i> Department Assignments
+            </button>
+        </div>
+
+        <!-- STAFF TAB -->
+        <div id="staffTab" class="tab-content active">
+            <div class="grid-2">
+                <!-- Staff Form -->
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-plus-circle"></i>
+                        <h3>Add / Edit Staff Member</h3>
+                    </div>
+                    <div class="card-body">
+                        <form id="staffForm">
+                            <input type="hidden" id="staffId">
+                            <div class="form-group">
+                                <label>Staff ID</label>
+                                <input type="text" id="staffIdInput" placeholder="Auto-generated" readonly disabled>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>First Name *</label>
+                                    <input type="text" id="staffFirstName" placeholder="First name" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Last Name *</label>
+                                    <input type="text" id="staffLastName" placeholder="Last name" required>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Position *</label>
+                                <select id="staffPosition" required>
+                                    <option value="">-- Select Position --</option>
+                                    <option value="Consultant">Consultant</option>
+                                    <option value="Registrar">Registrar</option>
+                                    <option value="Senior Doctor">Senior Doctor</option>
+                                    <option value="Doctor">Doctor</option>
+                                    <option value="Junior Doctor">Junior Doctor</option>
+                                    <option value="Senior Nurse">Senior Nurse</option>
+                                    <option value="Nurse">Nurse</option>
+                                    <option value="Junior Nurse">Junior Nurse</option>
+                                    <option value="Midwife">Midwife</option>
+                                    <option value="Surgeon">Surgeon</option>
+                                    <option value="Specialist">Specialist</option>
+                                    <option value="Pharmacist">Pharmacist</option>
+                                    <option value="Pharmacy Technician">Pharmacy Technician</option>
+                                    <option value="Lab Technician">Lab Technician</option>
+                                    <option value="Radiographer">Radiographer</option>
+                                    <option value="Administrator">Administrator</option>
+                                    <option value="Manager">Manager</option>
+                                    <option value="Receptionist">Receptionist</option>
+                                    <option value="Technician">Technician</option>
+                                    <option value="Maintenance">Maintenance</option>
+                                    <option value="Cleaner">Cleaner</option>
+                                    <option value="Porter">Porter</option>
+                                    <option value="Chef">Chef</option>
+                                    <option value="Catering Staff">Catering Staff</option>
+                                </select>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Phone</label>
+                                    <input type="tel" id="staffPhone" placeholder="+1 (555) 000-0000">
+                                </div>
+                                <div class="form-group">
+                                    <label>Date of Birth</label>
+                                    <input type="date" id="staffDOB">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Address</label>
+                                <textarea id="staffAddress" rows="2" placeholder="Street address, city, zip code"></textarea>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>NIN Number</label>
+                                    <input type="text" id="staffNIN" placeholder="National Insurance Number">
+                                </div>
+                                <div class="form-group">
+                                    <label>Ward ID</label>
+                                    <input type="number" id="staffWardId" placeholder="Optional">
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Salary</label>
+                                    <input type="number" id="staffSalary" placeholder="0.00" step="0.01">
+                                </div>
+                                <div class="form-group">
+                                    <label>Salary Scale</label>
+                                    <input type="text" id="staffSalaryScale" placeholder="e.g., Grade A">
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Hours/Week</label>
+                                    <input type="number" id="staffHours" placeholder="40">
+                                </div>
+                                <div class="form-group">
+                                    <label>Contract Type</label>
+                                    <select id="staffContractType">
+                                        <option value="">-- Select --</option>
+                                        <option value="Full-time">Full-time</option>
+                                        <option value="Part-time">Part-time</option>
+                                        <option value="Temporary">Temporary</option>
+                                        <option value="Contract">Contract</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Payment Type</label>
+                                <select id="staffPaymentType">
+                                    <option value="">-- Select --</option>
+                                    <option value="Monthly">Monthly</option>
+                                    <option value="Bi-weekly">Bi-weekly</option>
+                                    <option value="Weekly">Weekly</option>
+                                </select>
+                            </div>
+                            <div class="form-actions">
+                                <button type="submit" class="btn-primary">
+                                    <i class="fas fa-save"></i> Save Staff
+                                </button>
+                                <button type="button" class="btn-secondary" id="clearBtn">
+                                    <i class="fas fa-eraser"></i> Clear
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Staff Directory Table -->
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-users"></i>
+                        <h3>Staff Directory</h3>
+                    </div>
+                    <div class="card-body table-container">
+                        <div class="table-wrapper">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Name</th>
+                                        <th>Position</th>
+                                        <th>Phone</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="staffTable">
+                                    <tr>
+                                        <td colspan="5" class="empty-state">No staff records found</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ASSIGNMENTS TAB -->
+        <div id="assignmentsTab" class="tab-content">
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-building"></i>
+                    <h3>Staff Department Assignments</h3>
+                    <button id="btnNewAssignment" class="btn-primary ms-auto">
+                        <i class="fas fa-plus"></i> New Assignment
+                    </button>
+                </div>
+                <div class="card-body table-container">
+                    <div class="table-wrapper">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Staff ID</th>
+                                    <th>Staff Name</th>
+                                    <th>Position</th>
+                                    <th>Department</th>
+                                    <th>Start Date</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="assignmentsTable">
+                                <tr>
+                                    <td colspan="6" class="empty-state">No assignments found</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<!-- ASSIGNMENT MODAL -->
+<div id="assignmentModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="fas fa-link"></i> Assign Staff to Department</h3>
+            <button class="modal-close" id="closeAssignModal">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="assignmentForm">
+                <div class="form-group">
+                    <label>Select Staff Member *</label>
+                    <select id="assignStaffSelect" required>
+                        <option value="">-- Choose Staff --</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Select Department *</label>
+                    <select id="assignDeptSelect" required>
+                        <option value="">-- Choose Department --</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Start Date *</label>
+                    <input type="date" id="assignStartDate" required>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn-primary">
+                        <i class="fas fa-check"></i> Assign
+                    </button>
+                    <button type="button" class="btn-secondary" id="cancelAssignBtn">
+                        <i class="fas fa-times"></i> Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- External JavaScript -->
+<script src="/assets/js/staff-managment.js"></script>
+</body>
+</html>
